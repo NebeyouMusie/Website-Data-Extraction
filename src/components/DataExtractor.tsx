@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Loader2, Copy, Check, AlertCircle, ExternalLink, Zap } from 'lucide-react';
+import { Loader2, Copy, Check, AlertCircle, ExternalLink, Database } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 const DataExtractor = () => {
@@ -115,37 +115,37 @@ const DataExtractor = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100 p-4">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background p-4">
+      <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
-        <div className="text-center space-y-2 py-8">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Zap className="h-8 w-8 text-purple-600" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+        <div className="text-center space-y-4 py-12">
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <Database className="h-10 w-10 text-foreground" />
+            <h1 className="text-5xl font-bold text-foreground">
               Web Data Extractor
             </h1>
           </div>
-          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+          <p className="text-muted-foreground text-xl max-w-2xl mx-auto leading-relaxed">
             Extract structured data from any website using AI-powered prompts. Simply enter a URL and describe what you want to extract.
           </p>
         </div>
 
         {/* Main Form */}
-        <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ExternalLink className="h-5 w-5" />
+        <Card className="shadow-lg border-2">
+          <CardHeader className="pb-8">
+            <CardTitle className="flex items-center gap-2 text-2xl">
+              <ExternalLink className="h-6 w-6" />
               Data Extraction
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-base">
               Enter the website URL and describe what data you want to extract
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <form onSubmit={handleExtract} className="space-y-6">
+          <CardContent className="space-y-8">
+            <form onSubmit={handleExtract} className="space-y-8">
               {/* URL Input */}
-              <div className="space-y-2">
-                <Label htmlFor="url" className="text-sm font-medium">
+              <div className="space-y-3">
+                <Label htmlFor="url" className="text-base font-medium">
                   Website URL *
                 </Label>
                 <Input
@@ -154,17 +154,17 @@ const DataExtractor = () => {
                   placeholder="https://example.com"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  className="h-12"
+                  className="h-12 text-base"
                   disabled={isLoading}
                 />
-                <p className="text-xs text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   Enter the full URL of the website you want to extract data from
                 </p>
               </div>
 
               {/* Prompt Input */}
-              <div className="space-y-2">
-                <Label htmlFor="prompt" className="text-sm font-medium">
+              <div className="space-y-3">
+                <Label htmlFor="prompt" className="text-base font-medium">
                   Extraction Prompt *
                 </Label>
                 <Textarea
@@ -172,11 +172,11 @@ const DataExtractor = () => {
                   placeholder="Describe what data you want to extract..."
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  className="min-h-[100px] resize-none"
+                  className="min-h-[120px] resize-none text-base"
                   disabled={isLoading}
                 />
-                <div className="space-y-1">
-                  <p className="text-xs text-gray-500">
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">
                     Be specific about what data you want to extract. Examples:
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -185,7 +185,7 @@ const DataExtractor = () => {
                         key={index}
                         type="button"
                         onClick={() => setPrompt(example)}
-                        className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full hover:bg-purple-200 transition-colors"
+                        className="text-sm bg-muted text-muted-foreground px-3 py-1.5 rounded-full hover:bg-accent hover:text-accent-foreground transition-colors"
                         disabled={isLoading}
                       >
                         {example}
@@ -198,17 +198,17 @@ const DataExtractor = () => {
               {/* Extract Button */}
               <Button
                 type="submit"
-                className="w-full h-12 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium"
+                className="w-full h-14 text-base font-medium"
                 disabled={isLoading || !url || !prompt}
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Extracting Data...
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Extracting data...
                   </>
                 ) : (
                   <>
-                    <Zap className="mr-2 h-4 w-4" />
+                    <Database className="mr-2 h-5 w-5" />
                     Extract Data
                   </>
                 )}
@@ -217,15 +217,33 @@ const DataExtractor = () => {
           </CardContent>
         </Card>
 
+        {/* Loading Animation */}
+        {isLoading && (
+          <Card className="border-2 bg-muted/50">
+            <CardContent className="pt-8">
+              <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                <div className="relative">
+                  <div className="w-16 h-16 border-4 border-muted-foreground/20 rounded-full"></div>
+                  <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+                </div>
+                <div className="text-center space-y-2">
+                  <h3 className="text-lg font-medium">Extracting data...</h3>
+                  <p className="text-muted-foreground">Please wait while we process your request</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Error Display */}
         {error && (
-          <Card className="border-red-200 bg-red-50">
+          <Card className="border-2 border-destructive/20 bg-destructive/5">
             <CardContent className="pt-6">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
-                <div>
-                  <h3 className="font-medium text-red-800">Extraction Error</h3>
-                  <p className="text-red-700 text-sm mt-1">{error}</p>
+              <div className="flex items-start gap-4">
+                <AlertCircle className="h-6 w-6 text-destructive mt-0.5" />
+                <div className="space-y-1">
+                  <h3 className="font-medium text-destructive">Extraction Error</h3>
+                  <p className="text-destructive/80 text-sm">{error}</p>
                 </div>
               </div>
             </CardContent>
@@ -233,12 +251,12 @@ const DataExtractor = () => {
         )}
 
         {/* Results Display */}
-        {extractedData && (
-          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+        {extractedData && !isLoading && (
+          <Card className="border-2 shadow-lg">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-green-600" />
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <Check className="h-6 w-6 text-green-600" />
                   Extracted Data
                 </CardTitle>
                 <Button
@@ -260,13 +278,13 @@ const DataExtractor = () => {
                   )}
                 </Button>
               </div>
-              <CardDescription>
+              <CardDescription className="text-base">
                 Successfully extracted data from the website
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-                <pre className="text-green-400 text-sm font-mono whitespace-pre-wrap">
+              <div className="bg-muted rounded-lg p-6 overflow-x-auto">
+                <pre className="text-sm font-mono whitespace-pre-wrap text-foreground">
                   {JSON.stringify(extractedData, null, 2)}
                 </pre>
               </div>
@@ -275,8 +293,8 @@ const DataExtractor = () => {
         )}
 
         {/* Footer */}
-        <div className="text-center text-sm text-gray-500 py-4">
-          <p>Powered by n8n webhook integration for reliable data extraction</p>
+        <div className="text-center text-muted-foreground py-8">
+          <p className="text-sm">Powered by n8n webhook integration for reliable data extraction</p>
         </div>
       </div>
     </div>
