@@ -8,15 +8,71 @@ import { Label } from '@/components/ui/label';
 import { Loader2, Copy, Check, AlertCircle, ExternalLink, Database } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
+interface ExtractResponse {
+  success: boolean;
+  data?: any;
+  status: 'processing' | 'completed' | 'failed' | 'cancelled';
+  expiresAt?: string;
+  extract_id?: string;
+}
+
 const DataExtractor = () => {
   const [url, setUrl] = useState('');
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [extractedData, setExtractedData] = useState(null);
+  const [extractedData, setExtractedData] = useState<any>(null);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [jobStatus, setJobStatus] = useState<string>('');
 
   const webhookUrl = 'http://localhost:5678/webhook-test/1e77976c-81bd-4cd2-97cf-215e9bfc898a';
+
+  const pollJobStatus = async (extractId: string): Promise<ExtractResponse> => {
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'status_check',
+        extract_id: extractId,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  };
+
+  const waitForCompletion = async (extractId: string): Promise<any> => {
+    console.log('Starting to poll for job completion:', extractId);
+    
+    while (true) {
+      try {
+        const statusResponse = await pollJobStatus(extractId);
+        console.log('Status check response:', statusResponse);
+        
+        setJobStatus(statusResponse.status);
+        
+        if (statusResponse.status === 'completed') {
+          console.log('Job completed successfully');
+          return statusResponse.data;
+        } else if (statusResponse.status === 'failed') {
+          throw new Error('Extraction job failed');
+        } else if (statusResponse.status === 'cancelled') {
+          throw new Error('Extraction job was cancelled');
+        }
+        
+        // Wait 2 seconds before polling again
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } catch (error) {
+        console.error('Error polling job status:', error);
+        throw error;
+      }
+    }
+  };
 
   const handleExtract = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,10 +101,12 @@ const DataExtractor = () => {
     setIsLoading(true);
     setError('');
     setExtractedData(null);
+    setJobStatus('');
 
     try {
       console.log('Sending extraction request:', { url, prompt });
       
+      // Start the extraction job
       const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
@@ -64,14 +122,39 @@ const DataExtractor = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
-      console.log('Extraction response:', data);
-      
-      setExtractedData(data);
-      toast({
-        title: "Extraction Complete",
-        description: "Data has been successfully extracted from the website",
-      });
+      const initialResponse: ExtractResponse = await response.json();
+      console.log('Initial extraction response:', initialResponse);
+
+      if (!initialResponse.success) {
+        throw new Error('Failed to start extraction job');
+      }
+
+      // If the job is immediately completed, return the data
+      if (initialResponse.status === 'completed') {
+        setExtractedData(initialResponse.data);
+        toast({
+          title: "Extraction Complete",
+          description: "Data has been successfully extracted from the website",
+        });
+        return;
+      }
+
+      // If we have an extract_id, poll for completion
+      if (initialResponse.extract_id) {
+        const finalData = await waitForCompletion(initialResponse.extract_id);
+        setExtractedData(finalData);
+        toast({
+          title: "Extraction Complete",
+          description: "Data has been successfully extracted from the website",
+        });
+      } else {
+        // Fallback: treat the initial response as the final result
+        setExtractedData(initialResponse.data || initialResponse);
+        toast({
+          title: "Extraction Complete",
+          description: "Data has been successfully extracted from the website",
+        });
+      }
     } catch (error) {
       console.error('Extraction error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -83,6 +166,7 @@ const DataExtractor = () => {
       });
     } finally {
       setIsLoading(false);
+      setJobStatus('');
     }
   };
 
@@ -113,6 +197,21 @@ const DataExtractor = () => {
     "Find contact information and addresses",
     "Extract job titles and company names"
   ];
+
+  const getStatusMessage = () => {
+    switch (jobStatus) {
+      case 'processing':
+        return 'Processing your request...';
+      case 'completed':
+        return 'Extraction completed successfully!';
+      case 'failed':
+        return 'Extraction failed';
+      case 'cancelled':
+        return 'Extraction was cancelled';
+      default:
+        return 'Extracting data...';
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background p-4">
@@ -204,7 +303,7 @@ const DataExtractor = () => {
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Extracting data...
+                    {getStatusMessage()}
                   </>
                 ) : (
                   <>
@@ -227,8 +326,13 @@ const DataExtractor = () => {
                   <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
                 </div>
                 <div className="text-center space-y-2">
-                  <h3 className="text-lg font-medium">Extracting data...</h3>
-                  <p className="text-muted-foreground">Please wait while we process your request</p>
+                  <h3 className="text-lg font-medium">{getStatusMessage()}</h3>
+                  <p className="text-muted-foreground">
+                    {jobStatus === 'processing' 
+                      ? 'Your extraction job is being processed. This may take a few moments...'
+                      : 'Please wait while we process your request'
+                    }
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -250,7 +354,7 @@ const DataExtractor = () => {
           </Card>
         )}
 
-        {/* Results Display */}
+        {/* Results Display - Only show when we have completed data */}
         {extractedData && !isLoading && (
           <Card className="border-2 shadow-lg">
             <CardHeader>
