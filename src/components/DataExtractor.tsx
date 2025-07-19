@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -24,6 +24,7 @@ const DataExtractor = () => {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [jobStatus, setJobStatus] = useState<string>('');
+  const extractionSectionRef = useRef<HTMLDivElement>(null);
 
   const webhookUrl = 'http://localhost:5678/webhook-test/1e77976c-81bd-4cd2-97cf-215e9bfc898a';
 
@@ -102,6 +103,12 @@ const DataExtractor = () => {
     setError('');
     setExtractedData(null);
     setJobStatus('');
+
+    // Smooth scroll to extraction section
+    extractionSectionRef.current?.scrollIntoView({ 
+      behavior: 'smooth',
+      block: 'start'
+    });
 
     try {
       console.log('Sending extraction request:', { url, prompt });
@@ -316,28 +323,31 @@ const DataExtractor = () => {
           </CardContent>
         </Card>
 
-        {/* Loading Animation */}
-        {isLoading && (
-          <Card className="border-2 bg-muted/50">
-            <CardContent className="pt-8">
-              <div className="flex flex-col items-center justify-center py-8 space-y-4">
-                <div className="relative">
-                  <div className="w-16 h-16 border-4 border-muted-foreground/20 rounded-full"></div>
-                  <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+        {/* Extraction Processing Section */}
+        <div ref={extractionSectionRef}>
+          {/* Loading Animation */}
+          {isLoading && (
+            <Card className="border-2 bg-muted/50">
+              <CardContent className="pt-8">
+                <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                  <div className="relative">
+                    <div className="w-16 h-16 border-4 border-muted-foreground/20 rounded-full"></div>
+                    <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+                  </div>
+                  <div className="text-center space-y-2">
+                    <h3 className="text-lg font-medium">{getStatusMessage()}</h3>
+                    <p className="text-muted-foreground">
+                      {jobStatus === 'processing' 
+                        ? 'Your extraction job is being processed. This may take a few moments...'
+                        : 'Please wait while we process your request'
+                      }
+                    </p>
+                  </div>
                 </div>
-                <div className="text-center space-y-2">
-                  <h3 className="text-lg font-medium">{getStatusMessage()}</h3>
-                  <p className="text-muted-foreground">
-                    {jobStatus === 'processing' 
-                      ? 'Your extraction job is being processed. This may take a few moments...'
-                      : 'Please wait while we process your request'
-                    }
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+              </CardContent>
+            </Card>
+          )}
+        </div>
 
         {/* Error Display */}
         {error && (
@@ -396,10 +406,11 @@ const DataExtractor = () => {
           </Card>
         )}
 
-        {/* Footer */}
-        <div className="text-center text-muted-foreground py-8">
-          <p className="text-sm">Powered by n8n webhook integration for reliable data extraction</p>
-        </div>
+      </div>
+
+      {/* Footer - Moved to bottom */}
+      <div className="text-center text-muted-foreground py-8 border-t mt-12">
+        <p className="text-sm">Powered by n8n webhook integration for reliable data extraction</p>
       </div>
     </div>
   );
